@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Users, ClipboardList, Target, LayoutDashboard, Bell, Search, Plus, Filter, ChevronRight, AlertCircle, Clock, Edit2, Trash2, X, Save, ArrowUpRight, Layers, GraduationCap, Award, AlertTriangle, Zap, Upload, FileText, CheckCircle2, Phone, Mail, AtSign } from 'lucide-react';
-
+import ConnectionView from './ConnectionView';
 // ============================================================
 // FORGED IN STEEL · Pitt Women's Soccer · Front Office OS
 // Ben Waldrum — Head Coach
@@ -1593,8 +1593,8 @@ export default function App() {
     { id: 'depth',         label: 'Depth Chart',    icon: Layers          },
     { id: 'scholarships',  label: 'Scholarships',   icon: Award           },
     { id: 'recruiting',    label: 'Recruiting',     icon: Target          },
-    { id: 'staff',         label: 'Staff',          icon: Users           },
-    { id: 'import',        label: 'Import Hub',     icon: Upload          },
+    { id: 'connection',    label: 'Connection',      icon: Mail            },
+    { id: 'staff',         label: 'Staff',           icon: Users           },
   ];
 
   const resetAll = () => {
@@ -1681,6 +1681,7 @@ export default function App() {
             {loaded && view === 'depth'          && <DepthChartView depthChart={depthChart} setDepthChart={setDepthChart} />}
             {loaded && view === 'scholarships'   && <ScholarshipsView scholarships={scholarships} setScholarships={setScholarships} />}
             {loaded && view === 'recruiting'     && <RecruitingView recruits={recruits} setRecruits={setRecruits} />}
+            {loaded && view === 'connection'     && <ConnectionView />}
             {loaded && view === 'staff'          && <StaffView staff={staff} setStaff={setStaff} />}
             {loaded && view === 'import'         && <ImportHub setPlayers={setPlayers} setRecruits={setRecruits} setStaff={setStaff} onNav={setView} />}
           </div>

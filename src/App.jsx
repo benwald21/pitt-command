@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Calendar, Users, ClipboardList, Target, LayoutDashboard, Bell, Search, Plus, Filter, ChevronRight, AlertCircle, Clock, Edit2, Trash2, X, Save, ArrowUpRight, Layers, GraduationCap, Award, AlertTriangle, Zap, Upload, FileText, CheckCircle2, Phone, Mail, AtSign } from 'lucide-react';
 import ConnectionView from './ConnectionView';
+import RecruitingBoard from './RecruitingBoard';
+import CampList from './CampList';
 // ============================================================
 // FORGED IN STEEL · Pitt Women's Soccer · Front Office OS
 // Ben Waldrum — Head Coach

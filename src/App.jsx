@@ -1595,6 +1595,8 @@ export default function App() {
     { id: 'depth',         label: 'Depth Chart',    icon: Layers          },
     { id: 'scholarships',  label: 'Scholarships',   icon: Award           },
     { id: 'recruiting',    label: 'Recruiting',     icon: Target          },
+    { id: 'board',         label: 'Recruiting Board', icon: Layers        },
+    { id: 'camp',          label: 'Camp List',        icon: Mail          },
     { id: 'connection',    label: 'Connection',      icon: Mail            },
     { id: 'staff',         label: 'Staff',           icon: Users           },
   ];
@@ -1683,6 +1685,8 @@ export default function App() {
             {loaded && view === 'depth'          && <DepthChartView depthChart={depthChart} setDepthChart={setDepthChart} />}
             {loaded && view === 'scholarships'   && <ScholarshipsView scholarships={scholarships} setScholarships={setScholarships} />}
             {loaded && view === 'recruiting'     && <RecruitingView recruits={recruits} setRecruits={setRecruits} />}
+            {loaded && view === 'board'          && <RecruitingBoard recruits={recruits} setRecruits={setRecruits} />}
+            {loaded && view === 'camp'           && <CampList />}
             {loaded && view === 'connection'     && <ConnectionView />}
             {loaded && view === 'staff'          && <StaffView staff={staff} setStaff={setStaff} />}
             {loaded && view === 'import'         && <ImportHub setPlayers={setPlayers} setRecruits={setRecruits} setStaff={setStaff} onNav={setView} />}

@@ -1564,7 +1564,6 @@ const ImportHub = ({ setPlayers, setRecruits, setStaff, onNav }) => {
 // APP SHELL
 // ============================================================
 export default function App() {
-  export default function App() {
   const [view, setView] = useState('command');
   const [loaded, setLoaded] = useState(false);
   const [session, setSession] = useState(null);

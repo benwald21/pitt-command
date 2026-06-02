@@ -1564,6 +1564,7 @@ const ImportHub = ({ setPlayers, setRecruits, setStaff, onNav }) => {
 // APP SHELL
 // ============================================================
 export default function App() {
+  export default function App() {
   const [view, setView] = useState('command');
   const [loaded, setLoaded] = useState(false);
   const [session, setSession] = useState(null);
@@ -1578,25 +1579,6 @@ export default function App() {
   const [scholarships, setScholarshipsSt] = useState(DEFAULT_SCHOLARSHIPS);
 
   useEffect(() => {
-    useEffect(() => {
-    let sub;
-    const apply = async (s) => {
-      setSession(s);
-      if (s?.user?.email) {
-        acl.email = s.user.email.toLowerCase();
-        const { data } = await supabase.from('staff_roles').select('role').eq('email', acl.email).maybeSingle();
-        acl.role = data?.role || null;
-        setRole(acl.role);
-      } else { acl.email = null; acl.role = null; setRole(null); }
-      setAuthReady(true);
-    };
-    supabase.auth.getSession().then(({ data }) => apply(data.session));
-    sub = supabase.auth.onAuthStateChange((_e, s) => apply(s)).data.subscription;
-    return () => sub && sub.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-   useEffect(() => {
     let sub;
     const apply = async (s) => {
       setSession(s);
@@ -1629,22 +1611,6 @@ export default function App() {
       setEventsSt(e); setDepthChartSt(d); setScholarshipsSt(sc);
       setLoaded(true);
     })();
-  }, [role]);
-
-  useEffect(() => {
-    if (!role) return;
-    const setters = {
-      'pittv3:staff': setStaffSt, 'pittv3:tasks': setTasksSt, 'pittv3:players': setPlayersSt,
-      'pittv3:recruits': setRecruitsSt, 'pittv3:events': setEventsSt, 'pittv3:depth': setDepthChartSt,
-      'pittv3:scholarships': setScholarshipsSt,
-    };
-    const channel = supabase.channel('app_data_rt')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
-        const row = payload.new;
-        if (row && setters[row.key] && row.value != null) setters[row.key](row.value);
-      })
-      .subscribe();
-    return () => supabase.removeChannel(channel);
   }, [role]);
 
   useEffect(() => {
@@ -1697,17 +1663,12 @@ export default function App() {
 
   if (!authReady) return <div className="min-h-screen bg-stone-950 grid place-items-center text-sm text-stone-500" style={{ fontFamily: 'ui-sans-serif,system-ui,sans-serif' }}>Loading…</div>;
   if (!session) return <Login />;
-  if (!role) return <Login notAuthorized email={session.user.email} />;  const canEdit = role && role !== 'viewer';
-
-  if (!authReady) return <div className="min-h-screen bg-stone-950 grid place-items-center text-sm text-stone-500" style={{ fontFamily: 'ui-sans-serif,system-ui,sans-serif' }}>Loading…</div>;
-  if (!session) return <Login />;
   if (!role) return <Login notAuthorized email={session.user.email} />;
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100" style={{ fontFamily: 'ui-sans-serif,system-ui,-apple-system,sans-serif' }}>
       <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&display=swap" />
       <div className="flex">
-        {/* Sidebar */}
         <aside className="w-58 bg-stone-950 border-r border-stone-800/60 min-h-screen flex flex-col sticky top-0" style={{ width: '224px' }}>
           <div className="p-5 border-b border-stone-800/60">
             <div className="flex items-center gap-2.5 mb-1">
@@ -1726,9 +1687,8 @@ export default function App() {
             {navItems.map(item => {
               const Icon = item.icon;
               const active = view === item.id;
-              const isImport = item.id === 'import';
               return (
-                <button key={item.id} onClick={() => setView(item.id)} className={`w-full flex items-center gap-2.5 px-5 py-2.5 text-sm transition-colors border-l-2 ${active ? 'bg-stone-900 border-l-2' : 'text-stone-500 hover:text-stone-200 hover:bg-stone-900/50 border-transparent'} ${isImport ? 'mt-2 border-t border-stone-800' : ''}`} style={active ? { color: PITT_GOLD, borderColor: PITT_GOLD } : {}}>
+                <button key={item.id} onClick={() => setView(item.id)} className={`w-full flex items-center gap-2.5 px-5 py-2.5 text-sm transition-colors border-l-2 ${active ? 'bg-stone-900 border-l-2' : 'text-stone-500 hover:text-stone-200 hover:bg-stone-900/50 border-transparent'}`} style={active ? { color: PITT_GOLD, borderColor: PITT_GOLD } : {}}>
                   <Icon size={15} />
                   <span className="font-medium">{item.label}</span>
                   {active && <ChevronRight size={13} className="ml-auto" />}
@@ -1751,9 +1711,7 @@ export default function App() {
           </div>
         </aside>
 
-        {/* Main */}
         <main className="flex-1 min-w-0">
-          {/* Topbar */}
           <div className="bg-stone-900 border-b border-stone-800/60 px-8 py-3 flex items-center justify-between sticky top-0 z-10">
             <div className="flex items-center gap-3 flex-1 max-w-sm">
               <Search size={13} className="text-stone-600" />
@@ -1762,7 +1720,7 @@ export default function App() {
             <div className="flex items-center gap-4">
               <span className="text-[10px] tracking-[0.2em] uppercase font-semibold" style={{ color: loaded ? '#10b981' : '#78716c' }}>● {loaded ? 'Saved' : 'Loading'}</span>
               <span className="text-[10px] tracking-[0.2em] uppercase font-semibold px-2 py-1 rounded-sm" style={{ color: '#FFB81C', border: '1px solid #44403c' }}>{role}{!canEdit ? ' · view only' : ''}</span>
-            <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} className="text-[10px] tracking-[0.2em] uppercase font-semibold text-stone-500 hover:text-amber-400">Sign out</button>
+              <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} className="text-[10px] tracking-[0.2em] uppercase font-semibold text-stone-500 hover:text-amber-400">Sign out</button>
               <button className="relative p-2 hover:bg-stone-800 rounded-sm">
                 <Bell size={15} className="text-stone-500" />
                 {tasks.filter(t => t.status !== 'done' && daysUntil(t.due) < 0).length > 0 && <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full" />}
@@ -1770,7 +1728,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Content */}
           <div className="px-8 py-8 max-w-[1600px]">
             {!loaded && <div className="text-stone-500 text-sm">Loading workspace…</div>}
             {loaded && view === 'command'        && <CommandView tasks={tasks} recruits={recruits} events={events} staff={staff} scholarships={scholarships} onNav={setView} />}
@@ -1784,7 +1741,6 @@ export default function App() {
             {loaded && view === 'camp'           && <CampList />}
             {loaded && view === 'connection'     && <ConnectionView />}
             {loaded && view === 'staff'          && <StaffView staff={staff} setStaff={setStaff} />}
-            {loaded && view === 'import'         && <ImportHub setPlayers={setPlayers} setRecruits={setRecruits} setStaff={setStaff} onNav={setView} />}
           </div>
         </main>
       </div>

@@ -1596,6 +1596,24 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+   useEffect(() => {
+    let sub;
+    const apply = async (s) => {
+      setSession(s);
+      if (s?.user?.email) {
+        acl.email = s.user.email.toLowerCase();
+        const { data } = await supabase.from('staff_roles').select('role').eq('email', acl.email).maybeSingle();
+        acl.role = data?.role || null;
+        setRole(acl.role);
+      } else { acl.email = null; acl.role = null; setRole(null); }
+      setAuthReady(true);
+    };
+    supabase.auth.getSession().then(({ data }) => apply(data.session));
+    sub = supabase.auth.onAuthStateChange((_e, s) => apply(s)).data.subscription;
+    return () => sub && sub.unsubscribe();
+  }, []);
+
+  useEffect(() => {
     if (!role) return;
     (async () => {
       const [s,t,p,r,e,d,sc] = await Promise.all([
@@ -1611,6 +1629,22 @@ export default function App() {
       setEventsSt(e); setDepthChartSt(d); setScholarshipsSt(sc);
       setLoaded(true);
     })();
+  }, [role]);
+
+  useEffect(() => {
+    if (!role) return;
+    const setters = {
+      'pittv3:staff': setStaffSt, 'pittv3:tasks': setTasksSt, 'pittv3:players': setPlayersSt,
+      'pittv3:recruits': setRecruitsSt, 'pittv3:events': setEventsSt, 'pittv3:depth': setDepthChartSt,
+      'pittv3:scholarships': setScholarshipsSt,
+    };
+    const channel = supabase.channel('app_data_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
+        const row = payload.new;
+        if (row && setters[row.key] && row.value != null) setters[row.key](row.value);
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
   }, [role]);
 
   useEffect(() => {

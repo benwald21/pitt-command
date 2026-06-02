@@ -1697,6 +1697,10 @@ export default function App() {
 
   if (!authReady) return <div className="min-h-screen bg-stone-950 grid place-items-center text-sm text-stone-500" style={{ fontFamily: 'ui-sans-serif,system-ui,sans-serif' }}>Loading…</div>;
   if (!session) return <Login />;
+  if (!role) return <Login notAuthorized email={session.user.email} />;  const canEdit = role && role !== 'viewer';
+
+  if (!authReady) return <div className="min-h-screen bg-stone-950 grid place-items-center text-sm text-stone-500" style={{ fontFamily: 'ui-sans-serif,system-ui,sans-serif' }}>Loading…</div>;
+  if (!session) return <Login />;
   if (!role) return <Login notAuthorized email={session.user.email} />;
 
   return (

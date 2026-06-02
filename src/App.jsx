@@ -3,6 +3,8 @@ import { Calendar, Users, ClipboardList, Target, LayoutDashboard, Bell, Search, 
 import ConnectionView from './ConnectionView';
 import RecruitingBoard from './RecruitingBoard';
 import CampList from './CampList';
+import { supabase, acl } from './supabaseClient';
+import Login from './Login';
 // ============================================================
 // FORGED IN STEEL · Pitt Women's Soccer · Front Office OS
 // Ben Waldrum — Head Coach
@@ -218,8 +220,18 @@ const initialsFrom = n => (n || '').split(' ').map(w => w[0]).filter(Boolean).sl
 const fmtMoney = n => '$' + Math.round(n || 0).toLocaleString();
 const fmtEq = n => ((n || 0)).toFixed(2);
 
-async function loadStore(key, fallback) { try { const r = await window.storage.get(key); if (r?.value) return JSON.parse(r.value); } catch {} return fallback; }
-async function saveStore(key, val) { try { await window.storage.set(key, JSON.stringify(val)); } catch {} }
+async function loadStore(key, fallback) {
+  try {
+    const { data } = await supabase.from('app_data').select('value').eq('key', key).maybeSingle();
+    if (data && data.value != null) return data.value;
+    if (acl.role && acl.role !== 'viewer') await supabase.from('app_data').upsert({ key, value: fallback });
+  } catch {}
+  return fallback;
+}
+async function saveStore(key, val) {
+  if (!acl.role || acl.role === 'viewer') return;
+  try { await supabase.from('app_data').upsert({ key, value: val, updated_at: new Date().toISOString() }); } catch {}
+}
 
 // ============================================================
 // PRIMITIVES
@@ -1554,6 +1566,9 @@ const ImportHub = ({ setPlayers, setRecruits, setStaff, onNav }) => {
 export default function App() {
   const [view, setView] = useState('command');
   const [loaded, setLoaded] = useState(false);
+  const [session, setSession] = useState(null);
+  const [role, setRole] = useState(null);
+  const [authReady, setAuthReady] = useState(false);
   const [staff,        setStaffSt]       = useState(DEFAULT_STAFF);
   const [tasks,        setTasksSt]        = useState(DEFAULT_TASKS);
   const [players,      setPlayersSt]      = useState(DEFAULT_PLAYERS);
@@ -1563,6 +1578,25 @@ export default function App() {
   const [scholarships, setScholarshipsSt] = useState(DEFAULT_SCHOLARSHIPS);
 
   useEffect(() => {
+    useEffect(() => {
+    let sub;
+    const apply = async (s) => {
+      setSession(s);
+      if (s?.user?.email) {
+        acl.email = s.user.email.toLowerCase();
+        const { data } = await supabase.from('staff_roles').select('role').eq('email', acl.email).maybeSingle();
+        acl.role = data?.role || null;
+        setRole(acl.role);
+      } else { acl.email = null; acl.role = null; setRole(null); }
+      setAuthReady(true);
+    };
+    supabase.auth.getSession().then(({ data }) => apply(data.session));
+    sub = supabase.auth.onAuthStateChange((_e, s) => apply(s)).data.subscription;
+    return () => sub && sub.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!role) return;
     (async () => {
       const [s,t,p,r,e,d,sc] = await Promise.all([
         loadStore('pittv3:staff',        DEFAULT_STAFF),
@@ -1577,7 +1611,23 @@ export default function App() {
       setEventsSt(e); setDepthChartSt(d); setScholarshipsSt(sc);
       setLoaded(true);
     })();
-  }, []);
+  }, [role]);
+
+  useEffect(() => {
+    if (!role) return;
+    const setters = {
+      'pittv3:staff': setStaffSt, 'pittv3:tasks': setTasksSt, 'pittv3:players': setPlayersSt,
+      'pittv3:recruits': setRecruitsSt, 'pittv3:events': setEventsSt, 'pittv3:depth': setDepthChartSt,
+      'pittv3:scholarships': setScholarshipsSt,
+    };
+    const channel = supabase.channel('app_data_rt')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'app_data' }, (payload) => {
+        const row = payload.new;
+        if (row && setters[row.key] && row.value != null) setters[row.key](row.value);
+      })
+      .subscribe();
+    return () => supabase.removeChannel(channel);
+  }, [role]);
 
   const setStaff       = v => { setStaffSt(v); saveStore('pittv3:staff', v); };
   const setTasks       = v => { setTasksSt(v); saveStore('pittv3:tasks', v); };
@@ -1609,6 +1659,11 @@ export default function App() {
   };
 
   const me = staff[0];
+  const canEdit = role && role !== 'viewer';
+
+  if (!authReady) return <div className="min-h-screen bg-stone-950 grid place-items-center text-sm text-stone-500" style={{ fontFamily: 'ui-sans-serif,system-ui,sans-serif' }}>Loading…</div>;
+  if (!session) return <Login />;
+  if (!role) return <Login notAuthorized email={session.user.email} />;
 
   return (
     <div className="min-h-screen bg-stone-950 text-stone-100" style={{ fontFamily: 'ui-sans-serif,system-ui,-apple-system,sans-serif' }}>
@@ -1668,6 +1723,8 @@ export default function App() {
             </div>
             <div className="flex items-center gap-4">
               <span className="text-[10px] tracking-[0.2em] uppercase font-semibold" style={{ color: loaded ? '#10b981' : '#78716c' }}>● {loaded ? 'Saved' : 'Loading'}</span>
+              <span className="text-[10px] tracking-[0.2em] uppercase font-semibold px-2 py-1 rounded-sm" style={{ color: '#FFB81C', border: '1px solid #44403c' }}>{role}{!canEdit ? ' · view only' : ''}</span>
+            <button onClick={() => supabase.auth.signOut().then(() => window.location.reload())} className="text-[10px] tracking-[0.2em] uppercase font-semibold text-stone-500 hover:text-amber-400">Sign out</button>
               <button className="relative p-2 hover:bg-stone-800 rounded-sm">
                 <Bell size={15} className="text-stone-500" />
                 {tasks.filter(t => t.status !== 'done' && daysUntil(t.due) < 0).length > 0 && <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 bg-red-500 rounded-full" />}

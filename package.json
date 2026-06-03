@@ -1,21 +1,12 @@
-{
-  "name": "pitt-command",
-  "private": true,
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@supabase/supabase-js": "^2.45.0",
-    "lucide-react": "^0.470.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "xlsx": "^0.18.5"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.3.1",
-    "vite": "^5.4.0"
-  }
-}
+name	"pitt-command"
+version	"1.0.0"
+scripts	
+dev	"next dev"
+build	"next build"
+start	"next start"
+dependencies	
+next	"14.2.3"
+react	"18.3.1"
+react-dom	"18.3.1"
+lucide-react	"^0.383.0"
+xlsx	"^0.18.5"
